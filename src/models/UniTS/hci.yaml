@@ -1,0 +1,11 @@
+task_dataset:
+    HCI:
+        dataset: HCI
+        data: HCI
+        embed: timeF
+        label_len: 0
+        pred_len: 0
+        features: M # Multivariate serie predict multivariate serie
+        embed: timeF
+        enc_in: 2 # HR and HRV
+        context_size: 4 # the first 4 features are the context

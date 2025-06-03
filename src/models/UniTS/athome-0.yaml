@@ -1,0 +1,21 @@
+task_dataset:
+    ATHOME:
+        task_name: contextual_anomaly_detection
+        dataset: ATHOME
+        data: ATHOME
+        embed: timeF
+        features: M # Multivariate serie predict multivariate serie
+        patient_id: 0
+
+    ATHOME_SLEEP_BINARY:
+        task_name: classification
+        dataset: ATHOME_SLEEP
+        data: ATHOME_SLEEP
+        embed: timeF
+        label_len: 0 # 0 for classification
+        pred_len: 0 # 0 for classification
+        num_class: 2 # binary: 0=awake, 1=sleep
+        c_out: None # None for classification
+        enc_in: 9 # systolic, diastolic, spo2, hrv, cvrr, breath, pulse, time_sin, time_cos
+        num_labels: 1 # 1 for classification
+        binary_classification: true # Flag to indicate binary classification (no class weights)

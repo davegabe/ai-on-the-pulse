@@ -1,0 +1,6 @@
+task_dataset:
+    PREATHOME:
+        dataset: PREATHOME
+        data: PREATHOME
+        embed: timeF
+        features: M # Multivariate serie predict multivariate serie

@@ -1,0 +1,20 @@
+dataset: 'DREAMER'
+signal: 'multivariate'
+epochs: 20
+hyperbolic: False
+fixed_threshold: True
+signal_shape: 2
+lr: 0.0005
+batch_size: 64
+save_result: False  # save the results in a csv file
+filename: ''
+rec_error: 'dtw'
+combination: 'mult'  # ['recons','hyper_recons','mult','uncertainty','sum','sum_uncertainty','critic','critic_uncertainty']
+resume: False
+resume_epoch: 10 # epoch to resume, if resume is True
+load: False   # load stored vectors in the anomaly detection part
+
+
+new_features: False  # multivariate dataset
+id: 1 # multivariate dataset
+split: 1 # multivariate dataset

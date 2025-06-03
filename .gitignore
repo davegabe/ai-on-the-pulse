@@ -1,0 +1,15 @@
+data/download/
+data/preprocessed/
+data/raw/
+*.pyc
+*.pth
+*.log
+wandb/
+trained_models/
+checkpoints/
+plots/
+results.csv
+*.csv
+*.npy
+*.pdf
+*.svg
