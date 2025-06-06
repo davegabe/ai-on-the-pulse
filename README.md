@@ -2,6 +2,51 @@
 
 This repository contains code from the "AI on The Pulse" paper.
 
+## Abstract
+We introduce AI on the Pulse, a real-world-ready anomaly detection system that continuously monitors patients using a fusion of wearable sensors, ambient intelligence, and advanced AI models. Powered by UniTS, a state-of-the-art (SoTA) universal time-series model, our framework autonomously learns each patient’s unique physiological and behavioral patterns, detecting subtle deviations that signal potential health risks. Unlike classification methods that require impractical, continuous labeling in real-world scenarios, our approach uses anomaly detection to provide real-time, personalized alerts for reactive home-care interventions. 
+By operating with non-invasive, lightweight devices like smartwatches, our system proves that high-quality health monitoring is possible without clinical-grade equipment. 
+Beyond detection, we enhance interpretability by integrating LLMs, translating anomaly scores into clinically meaningful insights for healthcare professionals.
+
+## Setup
+The following command installs the required dependencies:
+```bash
+# Install the dependencies
+pip install -r requirements.txt
+```
+
+## Datasets and Preprocessing
+The following datasets are used in this project:
+- [WESAD](https://ubicomp.eti.uni-siegen.de/home/datasets/icmi18/)
+- [DREAMER](https://zenodo.org/records/546113)
+- [MAHNOB-HCI](https://mahnob-db.eu/hci-tagging/)
+
+The datasets are preprocessed using the following steps:
+```bash
+# Download and extract the datasets
+./data/download-datasets.sh
+
+# Preprocess the datasets
+python preprocess.py
+```
+
+
+## Training
+Ensure to be logged and to set your WANDB_USER in the file `run.py` to log the results to [Weights & Biases](https://wandb.ai/).
+The following command launches the training of the models:
+```bash
+# Train the models
+python run.py
+```
+
+
+## Evaluation
+The evaluation results are processed from logged runs on [Weights & Biases](https://wandb.ai/).
+To retrieve the evaluation results, run the following command:
+```bash
+# Evaluate the models
+python results.py
+```
+
 ## Anomaly Explanation Prompt Structure
 
 To generate a clinically relevant explanation for detected anomalies, the system constructs a specific prompt that is sent to the OpenAI GPT model (specifically `gpt-4o`). This prompt is dynamically built based on the specific anomaly data and the patient's context, providing the AI with all the necessary information and clearly defining the expected output format.

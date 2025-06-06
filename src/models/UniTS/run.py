@@ -3,12 +3,16 @@ import torch
 from exp.exp_sup import Exp_All_Task as Exp_All_Task_SUP
 import random
 import numpy as np
-from utils.ddp import init_distributed_mode
+import wandb
+from utils.ddp import is_main_process, init_distributed_mode
+import os
 
+VERSION = os.getenv("VERSION", "none")
+WANDB_USER = os.getenv("WANDB_USER", "none")
+BVP_DATASETS = ["wesad"]
 FIXED_SEED = 444
 
 if __name__ == '__main__':
-    # Parse arguments
     parser = argparse.ArgumentParser(description='UniTS supervised training')
 
     # basic config
@@ -30,8 +34,8 @@ if __name__ == '__main__':
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT',
                         help='target feature in S or MS task')
-    # parser.add_argument('--freq', type=str, default='h',
-    #                     help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
+    parser.add_argument('--freq', type=str, default='h',
+                        help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
     parser.add_argument('--task_data_config_path', type=str,
                         default='exp/all_task.yaml', help='root path of the task and data yaml file')
     parser.add_argument('--subsample_pct', type=float,
@@ -116,74 +120,92 @@ if __name__ == '__main__':
     print('Args in experiment:')
     print(args)
 
-    # If dataset is casas
-    extra_name = ""
-    extra_tags = []
+    win_size = 5
+    # For each learning rate
+    for lr in [5e-5, 1e-5, 5e-4, 1e-4, 5e-3]:
+        # For each source signal (ECG, BVP)
+        for source in ['ECG', 'BVP']:
+            # For each fold of the dataset, train and test the model
+            for k in range(5):
+                # Set seed to ensure reproducibility
+                random.seed(FIXED_SEED)
+                torch.manual_seed(FIXED_SEED)
+                np.random.seed(FIXED_SEED)
 
-    # Set the parameters
-    step = 1
-    win_size = 16
-    k = -1
+                # If the source signal is BVP and the dataset has no BVP signal, skip
+                if source == 'BVP' and args.dataset_name not in BVP_DATASETS:
+                    break
 
-    # Set seed to ensure reproducibility
-    random.seed(FIXED_SEED)
-    torch.manual_seed(FIXED_SEED)
-    np.random.seed(FIXED_SEED)
+                args.k = k  # Set the fold
+                args.learning_rate = lr  # Set the learning rate
+                args.source = source  # Set the source signal
+                task = args.task_name
+                args.confounding = False
+                args.win_size = win_size  # Set the window size
+                args.min_per_win = win_size // 6  # Set the minutes per window
+                args.step = 1  # Set the step size
+                if "contextual" in task:
+                    args.confounding = True
+                args.step = 1  # Set the step size
 
-    args.k = k  # Set the fold
-    args.learning_rate = 5e-5  # Set the learning rate
-    task = args.task_name
+                exp_name = f'{task}-lr{lr}-fold{k}-{source}'
 
-    args.confounding = False
-    args.win_size = win_size  # Set the window size
-    args.min_per_win = win_size // 6  # Set the minutes per window
-    args.step = step  # Set the step size
-    if "contextual" in task:
-        args.confounding = True
+                tags = [task, f"lr{lr}", source]
+                if args.pretrained_weight is not None:
+                    tags.append('pretrained')
+                else:
+                    tags.append('random')
 
-    exp_name = f'lr{args.learning_rate}-fold{k}-win{args.min_per_win}m-step{step}-{extra_name}'
+                if is_main_process():
+                    wandb.init(
+                        name=exp_name,
+                        entity=WANDB_USER,  # use personal wandb account
+                        # set the wandb project where this run will be logged
+                        project=f"{args.project_name}-win{win_size}-{VERSION}",
+                        # track hyperparameters and run metadata
+                        config=args,
+                        mode=args.debug,
+                        group=f"{task}_lr{lr}-{source}",
+                        tags=tags
+                    )
 
-    tags = [f"lr{args.learning_rate}", f"fold{k}",
-            f"win{args.min_per_win}m", f"step{step}"] + extra_tags
-    if args.pretrained_weight is not None:
-        tags.append('pretrained')
-    else:
-        tags.append('random')
+                # Run the experiment
+                Exp = Exp_All_Task_SUP
 
-    # try:
-    print('>>>>>>>start training>>>>>>>>>>>>>>>>>>>>>>>>>>')
-    Exp = Exp_All_Task_SUP
+                if args.is_training:
+                    for ii in range(args.itr):
+                        # setting record of experiments
+                        setting = '{}_{}_{}_{}_ft{}_dm{}_el{}_{}_{}'.format(
+                            args.task_name,
+                            args.model_id,
+                            args.model,
+                            args.data,
+                            args.features,
+                            args.d_model,
+                            args.e_layers,
+                            args.des, ii)
 
-    if args.is_training:
-        for ii in range(args.itr):
-            # setting record of experiments
-            setting = '{}_{}_{}_{}_ft{}_dm{}_el{}_{}_{}'.format(
-                args.task_name,
-                args.model_id,
-                args.model,
-                args.data,
-                args.features,
-                args.d_model,
-                args.e_layers,
-                args.des, ii)
+                        exp = Exp(args)  # set experiments
+                        print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                        exp.train(setting)
+                        exp.save_model(setting)
+                else:
+                    ii = 0
+                    setting = '{}_{}_{}_{}_ft{}_dm{}_el{}_{}_{}'.format(
+                        args.task_name,
+                        args.model_id,
+                        args.model,
+                        args.data,
+                        args.features,
+                        args.d_model,
+                        args.e_layers,
+                        args.des, ii)
 
-            exp = Exp(args)  # set experiments
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            exp.train(setting)
-            exp.save_model(setting)
-    else:
-        ii = 0
-        setting = '{}_{}_{}_{}_ft{}_dm{}_el{}_{}_{}'.format(
-            args.task_name,
-            args.model_id,
-            args.model,
-            args.data,
-            args.features,
-            args.d_model,
-            args.e_layers,
-            args.des, ii)
+                    exp = Exp(args)  # set experiments
+                    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                    exp.test(setting, load_pretrain=True)
+                    torch.cuda.empty_cache()
 
-        exp = Exp(args)  # set experiments
-        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting, load_pretrain=True)
-        torch.cuda.empty_cache()
+                # Close wandb
+                if is_main_process():
+                    wandb.finish()

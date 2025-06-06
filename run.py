@@ -10,9 +10,6 @@ def main():
 
     # Run UniTS
     os.system("./src/models/UniTS/run.sh")
-
-    # Run UniTS with subsample
-    os.system("./src/models/UniTS/run_subsample.sh")
     
     # Run HypAD
     os.system("./src/models/HypAD/run.sh")

@@ -494,27 +494,27 @@ def run_model(model_name: str, source: str, lr: float):
 
 
 if __name__ == '__main__':
-    # Dataset
-    dataset = "HCI"
+    # For each dataset
+    for dataset in ['DREAMER', 'HCI', 'WESAD']:
 
-    # For each model
-    models = ['TranAD', 'LSTM_AD', 'CAE_M', 'DAGMM', 'USAD', 'OmniAnomaly', 'MTAD_GAT', 'GDN', 'MAD_GAN', 'MSCRED']
+        # For each model
+        models = ['TranAD', 'LSTM_AD', 'CAE_M', 'DAGMM', 'USAD', 'OmniAnomaly', 'MTAD_GAT', 'GDN', 'MAD_GAN', 'MSCRED']
 
-    # For each source
-    sources = ['ECG', 'BVP']
-    if dataset == 'DREAMER' or dataset == 'HCI':
-        sources.remove('BVP')
+        # For each source
+        sources = ['ECG', 'BVP']
+        if dataset == 'DREAMER' or dataset == 'HCI':
+            sources.remove('BVP')
 
-    # For each learning rate
-    lrs = [0.005, 0.001, 0.0005, 0.0001, 0.00005]
+        # For each learning rate
+        lrs = [0.005, 0.001, 0.0005, 0.0001, 0.00005]
 
-    # Run the models
-    combined = [(model, source, lr)
-                for model in models for source in sources for lr in lrs]
+        # Run the models
+        combined = [(model, source, lr)
+                    for model in models for source in sources for lr in lrs]
 
-    if device == "cuda":
-        for c in combined:
-            run_model(*c)
-    else:
-        with Pool(2) as p:
-            p.starmap(run_model, combined)
+        if device == "cuda":
+            for c in combined:
+                run_model(*c)
+        else:
+            with Pool(2) as p:
+                p.starmap(run_model, combined)
