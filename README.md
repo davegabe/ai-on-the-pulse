@@ -174,3 +174,8 @@ The following data sample, collected through the ATHOME system, has been analyze
 #### Scores:
 - **Significance Score**: 8 - The heart rate peak is a significant anomaly that may indicate a serious underlying condition.
 - **Criticality Score**: 7 - The urgency is high due to the potential for acute cardiovascular events, necessitating timely evaluation.
+
+
+## Acknowledgements
+
+This work has been partly supported by the project “E-DAI”: Digital ecosystem for integrated analysis of heterogeneous health data relating to high-impact pathologies: an innovative model of assistance and research. Piano Operativo Salute (POS) 2014-2020, CUP: B83C22004150001.
